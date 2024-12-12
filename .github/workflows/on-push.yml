@@ -161,8 +161,8 @@ jobs:
       uses: actions-rs/cargo@v1
       with:
         command: build
-        args: --release --target=${{ matrix.target }}
-        use-cross: ${{ matrix.cross }}
+        args: --release --target=x86_64-unknown-linux-musl
+        use-cross: true
 
   github-release:
     runs-on: ubuntu-20.04
