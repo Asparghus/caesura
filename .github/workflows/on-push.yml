@@ -97,7 +97,14 @@ jobs:
 
     - run: sudo apt-get install flac lame sox imagemagick --yes
 
-    - run: cargo build --release
+    # - run: cargo build --release
+
+    - name: Build
+      uses: actions-rs/cargo@v1
+      with:
+        command: build
+        args: --release --target=x86_64-unknown-linux-musl
+        use-cross: true
 
     - name: Save cargo cache
       id: cargo-cache-save
@@ -157,12 +164,12 @@ jobs:
         name: caesura
         path: target/release/caesura
 
-    - name: Build
-      uses: actions-rs/cargo@v1
-      with:
-        command: build
-        args: --release --target=x86_64-unknown-linux-musl
-        use-cross: true
+    # - name: Build
+    #   uses: actions-rs/cargo@v1
+    #   with:
+    #     command: build
+    #     args: --release --target=x86_64-unknown-linux-musl
+    #     use-cross: true
 
   github-release:
     runs-on: ubuntu-20.04
