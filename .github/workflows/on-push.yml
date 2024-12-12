@@ -103,7 +103,7 @@ jobs:
       uses: actions-rs/cargo@v1
       with:
         command: build
-        args: --release --target=x86_64-unknown-linux-gnu:centos
+        args: --release --target=x86_64-unknown-linux-gnu
         use-cross: true
 
     - name: Save cargo cache
@@ -163,13 +163,6 @@ jobs:
       with:
         name: caesura
         path: target/release/caesura
-
-    # - name: Build
-    #   uses: actions-rs/cargo@v1
-    #   with:
-    #     command: build
-    #     args: --release --target=x86_64-unknown-linux-musl
-    #     use-cross: true
 
   github-release:
     runs-on: ubuntu-latest
