@@ -157,6 +157,12 @@ jobs:
         name: caesura
         path: target/release/caesura
 
+    - name: Build
+      uses: actions-rs/cargo@v1
+      with:
+        command: build
+        args: --release --target=x86_64-unknown-linux-gnu:centos
+        use-cross: x86_64-unknown-linux-gnu:centos
 
   github-release:
     runs-on: ubuntu-20.04
