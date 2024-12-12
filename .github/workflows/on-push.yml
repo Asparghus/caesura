@@ -9,7 +9,7 @@ env:
 jobs:
 
   release:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     outputs:
       version: ${{ steps.release.outputs.version }}
     steps:
@@ -23,10 +23,6 @@ jobs:
       env:
         GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
       run: ${{ secrets.RELEASE_SCRIPT }}
-
-    - run: echo "# ${{ steps.release.outputs.version}}" >> $GITHUB_STEP_SUMMARY
-
-    - run: cat release-notes.md >> $GITHUB_STEP_SUMMARY
 
     - uses: actions/upload-artifact@v4
       with:
@@ -48,7 +44,7 @@ jobs:
 
 
   cargo-build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     needs:
     - release
     steps:
@@ -162,29 +158,8 @@ jobs:
         path: target/release/caesura
 
 
-  cargo-publish:
-    runs-on: ubuntu-latest
-    if: ${{ needs.release.outputs.version != '' && ! contains(needs.release.outputs.version, '-') }}
-    needs:
-    - release
-    - cargo-build
-    steps:
-
-    - uses: actions/checkout@v4
-
-    - uses: actions/download-artifact@v4
-      with:
-        name: Cargo.toml
-
-    - run: git --no-pager diff --color
-
-    - run: cargo publish --allow-dirty --no-verify
-      env:
-        CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
-
-
   github-release:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     if: ${{ needs.release.outputs.version != ''}}
     needs:
       - release
@@ -233,66 +208,3 @@ jobs:
         --repo "${{ github.repository }}"
       env:
         GH_TOKEN: ${{ github.token }}
-
-
-  docker-build:
-    runs-on: ubuntu-latest
-    if: ${{ needs.release.outputs.version != ''}}
-    needs:
-    - release
-    steps:
-
-    - uses: actions/checkout@v4
-
-    - uses: actions/cache@v4
-      with:
-        path: /tmp/.buildx-cache
-        key: buildx-${{ github.sha }}
-        restore-keys: |
-          buildx-
-
-    - run: echo $GH_TOKEN | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-      env:
-        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-    - run: docker buildx create --use
-
-    - run: >
-        docker buildx build .
-        --build-arg VERSION=${{ needs.release.outputs.version }}
-        --tag ghcr.io/rogueoneecho/caesura:${{ needs.release.outputs.version }}
-        --cache-from=type=local,src=/tmp/.buildx-cache
-        --cache-to=type=local,dest=/tmp/.buildx-cache-new,mode=max
-        --push
-
-    # Temp fix
-    # https://github.com/docker/build-push-action/issues/252
-    # https://github.com/moby/buildkit/issues/1896
-    - run: rm -rf /tmp/.buildx-cache
-    - run: mv /tmp/.buildx-cache-new /tmp/.buildx-cache
-
-  docker-release:
-    runs-on: ubuntu-latest
-    needs:
-    - release
-    - cargo-build
-    - docker-build
-    steps:
-
-    - run: echo $GH_TOKEN | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-      env:
-        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-    - run: docker pull ghcr.io/rogueoneecho/caesura:${{ needs.release.outputs.version }}
-
-    - run: docker tag ghcr.io/rogueoneecho/caesura:${{ needs.release.outputs.version }} ghcr.io/rogueoneecho/caesura:${{ github.ref_name }}
-      if: ${{ github.ref_name == 'alpha' }}
-
-    - run: docker push ghcr.io/rogueoneecho/caesura:${{ github.ref_name }}
-      if: ${{ github.ref_name == 'alpha' }}
-
-    - run: docker tag ghcr.io/rogueoneecho/caesura:${{ needs.release.outputs.version }} ghcr.io/rogueoneecho/caesura:latest
-      if: ${{ ! contains(needs.release.outputs.version, '-') }}
-
-    - run: docker push ghcr.io/rogueoneecho/caesura:latest
-      if: ${{ ! contains(needs.release.outputs.version, '-') }}
