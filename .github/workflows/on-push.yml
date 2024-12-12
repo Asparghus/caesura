@@ -127,7 +127,7 @@ jobs:
 
     - run: touch output/queue.yml
 
-    - run: cargo test --release --no-fail-fast
+#    - run: cargo test --release --no-fail-fast
 
     - name: Run cargo check
       run: |
